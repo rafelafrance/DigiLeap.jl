@@ -33,7 +33,7 @@ function nms(boxes; threshold=0.3)
 	while length(idx) > 0
 		# Append another non-overlapping box
 		curr = pop!(idx)
-		pushfirst!(non_overlapping, curr)
+		push!(non_overlapping, curr)
 
 		# Get interior (overlap) coordinates
 		xx1 = max.(x1[idx], x1[curr])
@@ -49,5 +49,6 @@ function nms(boxes; threshold=0.3)
 		idx = idx[overlap .< threshold]
 	end
 
+	reverse!(non_overlapping)
 	boxes[non_overlapping, :]
 end

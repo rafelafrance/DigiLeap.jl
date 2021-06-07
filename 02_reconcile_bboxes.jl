@@ -17,14 +17,14 @@ end
 begin
 	using CSV
 	using DataFrames
-	using ImageDraw
+	using DigiLeap
 	using Images
 	using JSON
 	using PlutoUI
 end
 
-# ╔═╡ 39280d20-cf59-4819-b656-00de8de6ca5a
-md"""# Display Reconciled Bounding Boxes"""
+# ╔═╡ 39b004ba-295b-4e56-8023-de2a1d36b5ea
+md"""# Setup"""
 
 # ╔═╡ 46e1eb9d-19fc-4176-86fe-f57a4e37579d
 md"""## File locations"""
@@ -33,8 +33,37 @@ md"""## File locations"""
 begin
 	LABEL_BABEL_2 = "data/label-babel-2"
 	SHEETS_2 = "$LABEL_BABEL_2/herbarium-sheets-small"
+	UNRECONCILED = "$LABEL_BABEL_2/17633_label_babel_2.unreconciled.csv"
 	RECONCILED = "$LABEL_BABEL_2/17633_label_babel_2.reconciled.csv"
 end
+
+# ╔═╡ 2c3e2923-0edc-4665-bd99-f53abcb96ab7
+md"""# Reconcile Bounding Boxes"""
+
+# ╔═╡ 77f18629-4609-4e31-8968-04743151f390
+md"""## Read unreconciled data"""
+
+# ╔═╡ bcb25f98-811e-4da0-815a-7307ae85d604
+unreconciled = CSV.File(UNRECONCILED) |> DataFrame
+
+# ╔═╡ 4a23d576-bfa6-4e54-9be1-6e57fe6b4128
+md"""## Group classifications by subject"""
+
+# ╔═╡ 542f207b-0cc5-4c5d-9d3f-c17476456f24
+by_subject = groupby(unreconciled, :subject_id)
+
+# ╔═╡ 1fdf15af-4e4f-4a88-831c-cab328e19220
+for subject in by_subject
+	for class in eachrow(subject)
+		# with_terminal() do
+			println(class.classification_id)
+		# end
+	end
+	break
+end
+
+# ╔═╡ 39280d20-cf59-4819-b656-00de8de6ca5a
+md"""# Display Reconciled Bounding Boxes"""
 
 # ╔═╡ 62f76c0a-236b-4aa9-ab27-e0ae67108de1
 md"""## Read reconciled data"""
@@ -45,34 +74,12 @@ df = CSV.File(RECONCILED) |> DataFrame
 # ╔═╡ e8ef035a-4e4d-4a22-9a09-b78d2e127abf
 md"""## Display bounding box given JSON coordinates"""
 
-# ╔═╡ ba6b0ce3-d1f3-4498-872f-1d8b6cd456ae
-function draw_rectangle(image, coords; color=RGB(0, 0, 0), thickness=1)
-	ll, tt, rr, bb = coords
-
-	max_h, max_w = size(image)
-
-	ll, rr = clamp(ll, 1, max_w), clamp(rr, 1, max_w)
-	tt, bb = clamp(tt, 1, max_h), clamp(bb, 1, max_h)
-
-	image[tt:clamp(tt+thickness, 1, max_h), ll:rr] .= color
-	image[clamp(bb-thickness, 1, max_h):bb, ll:rr] .= color
-	image[tt:bb, ll:clamp(ll+thickness, 1, max_w)] .= color
-	image[tt:bb, clamp(rr-thickness, 1, max_w):rr] .= color
-end
-
 # ╔═╡ 70cacb63-709a-42ee-bc84-b14266510adc
 function draw_box(image, box, color; thickness=1)
 	box = JSON.parse(box)
 	ll, tt, rr, bb = box["left"], box["top"], box["right"], box["bottom"]
-	draw_rectangle(image, (ll, tt, rr, bb), color=color, thickness=thickness)
+	simple_box(image, (ll, tt, rr, bb), color=color, thickness=thickness)
 end
-
-# ╔═╡ 4f19d1e2-1469-4594-8476-5d0f7008e191
-# function draw_box_new(image, box, color; width=1)
-# 	box = JSON.parse(box)
-# 	ll, tt, rr, bb = box["left"], box["top"], box["right"], box["bottom"]
-# 	draw!(image, Polygon(RectanglePoints(ll, tt, rr, bb)), color)
-# end
 
 # ╔═╡ 3c70dabb-a4c9-4a10-8832-01440d5ada83
 md"""## Show all bounding boxes for a subject"""
@@ -114,16 +121,21 @@ show_boxes(idx)
 
 
 # ╔═╡ Cell order:
-# ╟─39280d20-cf59-4819-b656-00de8de6ca5a
+# ╟─39b004ba-295b-4e56-8023-de2a1d36b5ea
 # ╠═bf2b8bf6-c281-11eb-1830-57b105bc4b13
 # ╟─46e1eb9d-19fc-4176-86fe-f57a4e37579d
 # ╠═be57fa62-073c-4d68-ba7a-f030409b1fab
+# ╟─2c3e2923-0edc-4665-bd99-f53abcb96ab7
+# ╠═77f18629-4609-4e31-8968-04743151f390
+# ╠═bcb25f98-811e-4da0-815a-7307ae85d604
+# ╟─4a23d576-bfa6-4e54-9be1-6e57fe6b4128
+# ╠═542f207b-0cc5-4c5d-9d3f-c17476456f24
+# ╠═1fdf15af-4e4f-4a88-831c-cab328e19220
+# ╟─39280d20-cf59-4819-b656-00de8de6ca5a
 # ╟─62f76c0a-236b-4aa9-ab27-e0ae67108de1
 # ╠═c52ab234-83fc-48d5-a3a8-3b8f23031b55
 # ╟─e8ef035a-4e4d-4a22-9a09-b78d2e127abf
-# ╠═ba6b0ce3-d1f3-4498-872f-1d8b6cd456ae
 # ╠═70cacb63-709a-42ee-bc84-b14266510adc
-# ╠═4f19d1e2-1469-4594-8476-5d0f7008e191
 # ╟─3c70dabb-a4c9-4a10-8832-01440d5ada83
 # ╠═29d7ff04-4cc2-474d-9c81-8d4462812d5a
 # ╟─7b9ee6de-f3a4-42ba-ab6b-7efc2e2e6236

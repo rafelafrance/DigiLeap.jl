@@ -1,12 +1,10 @@
 module DigiLeap
 
-export iou, nms
+export iou, nms,
+       simple_box
 
 
-import Base.Matrix
-
-
-for i in ["box_calc"]
+for i in ["box_calc", "simple_draw"]
     include("$(i).jl")
 end
 
