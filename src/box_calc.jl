@@ -14,13 +14,19 @@ function iou(box1, box2)
 end
 
 
-"""Non-maximum suppression of bounding boxes.
+"""Find non-maximum suppression groups of bounding boxes.
 
-This finds the largest bounding boxes and remove all other smaller boxes that
-overlap with them by having an intersection over union (IOU) that is greater
-than or equal to the given threshold. The output boxes are sorted by area descending.
+This finds and labels all boxes in each non-maximum suppression group and marks the
+keepers with a positive group number and all of the ones normally removed by NMS with
+negative values. For instance group 3's winner is labeled with a 3 and losers are
+marked -3.
+
+We use this function for variants of bounding box non-maximum suppression.
+
+Modified from Matlab code:
+https://www.computervisionblog.com/2011/08/blazing-fast-nmsm-from-exemplar-svm.html
 """
-function nms(boxes; threshold=0.3)
+function bbox_nms_groups(boxes; threshold=0.3)
 	foxes = convert(Matrix{Float32}, boxes)
 
 	# Simplify access to box components
@@ -29,11 +35,14 @@ function nms(boxes; threshold=0.3)
 	area = (x2 .- x1 .+ 1.0) .* (y2 .- y1 .+ 1.0)
 	idx = sortperm(area)
 
-	non_overlapping = []
+	overlapping = zeros(Int32, length(idx))
+	group = 0
+
 	while length(idx) > 0
 		# Append another non-overlapping box
+		group += 1
 		curr = pop!(idx)
-		push!(non_overlapping, curr)
+		overlapping[curr] = group
 
 		# Get interior (overlap) coordinates
 		xx1 = max.(x1[idx], x1[curr])
@@ -45,10 +54,20 @@ function nms(boxes; threshold=0.3)
 		inter = max.(0.0, xx2 .- xx1 .+ 1.0) .* max.(0.0, yy2 .- yy1 .+ 1.0)
 		overlap = inter ./ (area[curr] .+ area[idx] .- inter)
 
-		# Find all IOUs smaller than threshold and keep them
+		# Mark all other bounding boxes in the group
+		in_group = idx[overlap .>= threshold]
+		overlapping[in_group] .= -group
+
+		# Remove bounding boxes in the current group from further consideration
 		idx = idx[overlap .< threshold]
 	end
 
-	reverse!(non_overlapping)
-	boxes[non_overlapping, :]
+	overlapping
+end
+
+
+"""Non-maximum suppression of bounding boxes."""
+function bbox_nms(boxes; threshold=0.3)
+	groups = bbox_nms_groups(boxes; threshold=threshold)
+	boxes[groups .> 0, :]
 end

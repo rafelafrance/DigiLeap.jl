@@ -20,7 +20,7 @@
         @test iou(box1, box2) == area2 / (area1 + area2 - area2)
     end
 
-    @testset "nms" begin
+    @testset "bbox_nms" begin
         # =====================================================================
         # It handles non-overlapping boxes
         boxes = [
@@ -28,7 +28,7 @@
             30 30 40 40;
             50 50 60 60
         ]
-        @test nms(boxes) == boxes
+        @test bbox_nms(boxes) == boxes
 
         # =====================================================================
         # It handles one box inside another
@@ -36,7 +36,7 @@
             100 100 400 400;
             110 110 390 390
         ]
-        @test nms(boxes) == reshape(boxes[1, :], 1, 4)
+        @test bbox_nms(boxes) == reshape(boxes[1, :], 1, 4)
 
         # =====================================================================
         # It handles overlap above the threshold
@@ -44,7 +44,7 @@
             100 100 400 400;
             120 120 410 410
         ]
-        @test nms(boxes) == reshape(boxes[1, :], 1, 4)
+        @test bbox_nms(boxes) == reshape(boxes[1, :], 1, 4)
 
         # =====================================================================
         # It handles overlap below the threshold
@@ -52,12 +52,12 @@
             100 100 400 400;
             395 395 500 500
         ]
-        @test nms(boxes) == boxes[[2, 1], :]  # Boxes are sorted by area descending
+        @test bbox_nms(boxes) == boxes
 
         # =====================================================================
         # It handles an empty array
         boxes = Array{Int64}(undef, 0, 4)
-        @test nms(boxes) == Array{Int64}(undef, 0, 4)
+        @test bbox_nms(boxes) == Array{Int64}(undef, 0, 4)
    end
 
 end

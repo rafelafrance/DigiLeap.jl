@@ -62,6 +62,39 @@ for subject in by_subject
 	break
 end
 
+# ╔═╡ 7469e207-677a-4f4a-a263-0a17bb1df2ae
+md"""## We need a place to store the extracted and processed data"""
+
+# ╔═╡ 84a80104-f69a-4b6a-927a-bfa2c311eaf9
+md"""This is a structure used while converting Notes from Nature expedition data that
+identifies labels on a herbarium sheet to reconciled subject data. The data is temporary and has a singular use."""
+
+# ╔═╡ 4a745e95-9e2a-49ee-be1d-5ee9d3a5a612
+mutable struct Subject
+    subject_id::String
+    file_name::String
+    groups::Array{Int32}
+    boxes::Matrix{Int32}
+    types::Array{String}
+    merged_boxes::Matrix{Int32}
+    merged_types::Array{String}
+    removed_boxes::Matrix{Int32}
+    removed_types::Array{String}
+    Subject() = new("", "", [], [], [], [], [], [], [])
+end
+
+# ╔═╡ e7e20eaa-ead8-46da-b662-805f538cbe69
+md"""## Convert bounding box from JSON to an array"""
+
+# ╔═╡ 26c69ecb-a0e9-41d4-bdab-7e3652d5dbaa
+function bbox_from_json(json_box::String)
+    box = JSON.parse(json_box)
+    [box["left"], box["top"], box["right"], box["bottom"]]
+end
+
+# ╔═╡ 817273fe-c91f-4bdf-a954-eeedf5cd46b7
+
+
 # ╔═╡ 39280d20-cf59-4819-b656-00de8de6ca5a
 md"""# Display Reconciled Bounding Boxes"""
 
@@ -131,6 +164,12 @@ show_boxes(idx)
 # ╟─4a23d576-bfa6-4e54-9be1-6e57fe6b4128
 # ╠═542f207b-0cc5-4c5d-9d3f-c17476456f24
 # ╠═1fdf15af-4e4f-4a88-831c-cab328e19220
+# ╠═7469e207-677a-4f4a-a263-0a17bb1df2ae
+# ╠═84a80104-f69a-4b6a-927a-bfa2c311eaf9
+# ╠═4a745e95-9e2a-49ee-be1d-5ee9d3a5a612
+# ╠═e7e20eaa-ead8-46da-b662-805f538cbe69
+# ╠═26c69ecb-a0e9-41d4-bdab-7e3652d5dbaa
+# ╠═817273fe-c91f-4bdf-a954-eeedf5cd46b7
 # ╟─39280d20-cf59-4819-b656-00de8de6ca5a
 # ╟─62f76c0a-236b-4aa9-ab27-e0ae67108de1
 # ╠═c52ab234-83fc-48d5-a3a8-3b8f23031b55
