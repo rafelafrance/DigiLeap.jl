@@ -63,7 +63,7 @@ for subject in by_subject
 end
 
 # ╔═╡ 7469e207-677a-4f4a-a263-0a17bb1df2ae
-md"""## We need a place to store the extracted and processed data"""
+md"""## A place to store processed reconciled data"""
 
 # ╔═╡ 84a80104-f69a-4b6a-927a-bfa2c311eaf9
 md"""This is a structure used while converting Notes from Nature expedition data that
