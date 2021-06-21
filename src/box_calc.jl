@@ -55,11 +55,11 @@ function bbox_nms_groups(boxes; threshold=0.3)
 		overlap = inter ./ (area[curr] .+ area[idx] .- inter)
 
 		# Mark all other bounding boxes in the group
-		in_group = idx[overlap .>= threshold]
-		overlapping[in_group] .= -group
+		group_mask = overlap .>= threshold
+		overlapping[idx[group_mask]] .= -group
 
 		# Remove bounding boxes in the current group from further consideration
-		idx = idx[overlap .< threshold]
+		idx = idx[.!group_mask]
 	end
 
 	overlapping
@@ -70,4 +70,11 @@ end
 function bbox_nms(boxes; threshold=0.3)
 	groups = bbox_nms_groups(boxes; threshold=threshold)
 	boxes[groups .> 0, :]
+end
+
+
+"""Find overlapping groups of bounding boxes."""
+function overlapping_bboxes(boxes; threshold=0.3)
+	groups = bbox_nms_groups(boxes; threshold=threshold)
+	abs.(groups)
 end

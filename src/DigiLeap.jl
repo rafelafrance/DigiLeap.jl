@@ -1,6 +1,6 @@
 module DigiLeap
 
-export iou, bbox_nms, bbox_nms_groups,
+export iou, bbox_nms, bbox_nms_groups, overlapping_bboxes,
        simple_box
 
 

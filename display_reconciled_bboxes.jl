@@ -13,6 +13,9 @@ macro bind(def, element)
     end
 end
 
+# ╔═╡ 5cbedf9e-3bfb-4862-b7b0-4f53715bbbc7
+using Revise
+
 # ╔═╡ bf2b8bf6-c281-11eb-1830-57b105bc4b13
 begin
 	using CSV
@@ -36,64 +39,6 @@ begin
 	UNRECONCILED = "$LABEL_BABEL_2/17633_label_babel_2.unreconciled.csv"
 	RECONCILED = "$LABEL_BABEL_2/17633_label_babel_2.reconciled.csv"
 end
-
-# ╔═╡ 2c3e2923-0edc-4665-bd99-f53abcb96ab7
-md"""# Reconcile Bounding Boxes"""
-
-# ╔═╡ 77f18629-4609-4e31-8968-04743151f390
-md"""## Read unreconciled data"""
-
-# ╔═╡ bcb25f98-811e-4da0-815a-7307ae85d604
-unreconciled = CSV.File(UNRECONCILED) |> DataFrame
-
-# ╔═╡ 4a23d576-bfa6-4e54-9be1-6e57fe6b4128
-md"""## Group classifications by subject"""
-
-# ╔═╡ 542f207b-0cc5-4c5d-9d3f-c17476456f24
-by_subject = groupby(unreconciled, :subject_id)
-
-# ╔═╡ 1fdf15af-4e4f-4a88-831c-cab328e19220
-for subject in by_subject
-	for class in eachrow(subject)
-		# with_terminal() do
-			println(class.classification_id)
-		# end
-	end
-	break
-end
-
-# ╔═╡ 7469e207-677a-4f4a-a263-0a17bb1df2ae
-md"""## A place to store processed reconciled data"""
-
-# ╔═╡ 84a80104-f69a-4b6a-927a-bfa2c311eaf9
-md"""This is a structure used while converting Notes from Nature expedition data that
-identifies labels on a herbarium sheet to reconciled subject data. The data is temporary and has a singular use."""
-
-# ╔═╡ 4a745e95-9e2a-49ee-be1d-5ee9d3a5a612
-mutable struct Subject
-    subject_id::String
-    file_name::String
-    groups::Array{Int32}
-    boxes::Matrix{Int32}
-    types::Array{String}
-    merged_boxes::Matrix{Int32}
-    merged_types::Array{String}
-    removed_boxes::Matrix{Int32}
-    removed_types::Array{String}
-    Subject() = new("", "", [], [], [], [], [], [], [])
-end
-
-# ╔═╡ e7e20eaa-ead8-46da-b662-805f538cbe69
-md"""## Convert bounding box from JSON to an array"""
-
-# ╔═╡ 26c69ecb-a0e9-41d4-bdab-7e3652d5dbaa
-function bbox_from_json(json_box::String)
-    box = JSON.parse(json_box)
-    [box["left"], box["top"], box["right"], box["bottom"]]
-end
-
-# ╔═╡ 817273fe-c91f-4bdf-a954-eeedf5cd46b7
-
 
 # ╔═╡ 39280d20-cf59-4819-b656-00de8de6ca5a
 md"""# Display Reconciled Bounding Boxes"""
@@ -122,7 +67,7 @@ function show_boxes(idx)
 	row = df[idx, :]
 	row = Dict(pairs(skipmissing(row)))
 
-	path = "$SHEETS_2/$(row[:subject_file_name])"
+	path = "$SHEETS_2/$(row[:image_file])"
 
 	image = load(path)
 
@@ -154,23 +99,12 @@ show_boxes(idx)
 
 
 # ╔═╡ Cell order:
+# ╟─39280d20-cf59-4819-b656-00de8de6ca5a
 # ╟─39b004ba-295b-4e56-8023-de2a1d36b5ea
+# ╠═5cbedf9e-3bfb-4862-b7b0-4f53715bbbc7
 # ╠═bf2b8bf6-c281-11eb-1830-57b105bc4b13
 # ╟─46e1eb9d-19fc-4176-86fe-f57a4e37579d
 # ╠═be57fa62-073c-4d68-ba7a-f030409b1fab
-# ╟─2c3e2923-0edc-4665-bd99-f53abcb96ab7
-# ╠═77f18629-4609-4e31-8968-04743151f390
-# ╠═bcb25f98-811e-4da0-815a-7307ae85d604
-# ╟─4a23d576-bfa6-4e54-9be1-6e57fe6b4128
-# ╠═542f207b-0cc5-4c5d-9d3f-c17476456f24
-# ╠═1fdf15af-4e4f-4a88-831c-cab328e19220
-# ╠═7469e207-677a-4f4a-a263-0a17bb1df2ae
-# ╠═84a80104-f69a-4b6a-927a-bfa2c311eaf9
-# ╠═4a745e95-9e2a-49ee-be1d-5ee9d3a5a612
-# ╠═e7e20eaa-ead8-46da-b662-805f538cbe69
-# ╠═26c69ecb-a0e9-41d4-bdab-7e3652d5dbaa
-# ╠═817273fe-c91f-4bdf-a954-eeedf5cd46b7
-# ╟─39280d20-cf59-4819-b656-00de8de6ca5a
 # ╟─62f76c0a-236b-4aa9-ab27-e0ae67108de1
 # ╠═c52ab234-83fc-48d5-a3a8-3b8f23031b55
 # ╟─e8ef035a-4e4d-4a22-9a09-b78d2e127abf
