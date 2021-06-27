@@ -7,23 +7,21 @@ using JSON
 
 # File locations"""
 LABEL_BABEL_2 = "data/label-babel-2"
-SHEETS_2 = "$LABEL_BABEL_2/herbarium-sheets-small"
 UNRECONCILED = "$LABEL_BABEL_2/17633_label_babel_2.unreconciled.csv"
 RECONCILED = "$LABEL_BABEL_2/17633_label_babel_2.reconciled.csv"
 
-# Read unreconciled data
-unreconciled = CSV.File(UNRECONCILED) |> DataFrame
-
 # These structures are used while converting Notes from Nature expedition data that
 # identifies labels on a herbarium sheet to reconciled (combined) subject data.
-# The data is temporary and has a singular use.
-mutable struct MergedBox
-	type_::String
-	group::Int64
+# The data is temporary and is only used here.
+
+"""Holds the coordinates and type of a bounding box."""
+struct MergedBox
 	box::Array{Int64}
-	MergedBox(lb, box) = new(lb, 0, box)
+	type_::String
+	MergedBox(lb, box) = new(box, lb)
 end
 
+"""Used to organize all of the bounding boxes on a herbarium sheet."""
 mutable struct MergedSubject
 	subject_id::Int64
 	file_name::String
@@ -48,33 +46,33 @@ function boxes2array(recon_boxes::Array{MergedBox})
 	boxes
 end
 
-# Group classifications by subject
-by_subject = groupby(unreconciled, :subject_id)
+"""Convert the CSV/JSON input data into an array of MergedSubject records."""
+function init_subject_records(by_subject)
+	subjects = []
+	for old_sub in by_subject
+		sid::Int64 = old_sub.subject_id[1]
+		fn::String = old_sub.subject_Filename[1]
+		sub = MergedSubject(sid, fn)
 
-# Initialize an array of subject records.
-subjects = []
-for old_sub in by_subject
-	sid::Int64 = old_sub.subject_id[1]
-	fn::String = old_sub.subject_Filename[1]
-	sub = MergedSubject(sid, fn)
+		for row in eachrow(old_sub)
+			row = Dict(pairs(skipmissing(row)))
 
-	for row in eachrow(old_sub)
-		row = Dict(pairs(skipmissing(row)))
+			prefix = "Box(es): box"
+			boxes = [v for (k, v) in pairs(row) if startswith(string(k), prefix)]
 
-		prefix = "Box(es): box"
-		boxes = [v for (k, v) in pairs(row) if startswith(string(k), prefix)]
+			prefix = "Box(es): select"
+			types = [v for (k, v) in pairs(row) if startswith(string(k), prefix)]
 
-		prefix = "Box(es): select"
-		types = [v for (k, v) in pairs(row) if startswith(string(k), prefix)]
+			for (box, type_) in zip(boxes, types)
+				box = bbox_from_json(box)
+				push!(sub.boxes, MergedBox(type_, box))
+			end
 
-		for (box, type_) in zip(boxes, types)
-			box = bbox_from_json(box)
-			push!(sub.boxes, MergedBox(type_, box))
 		end
 
+		push!(subjects, sub)
 	end
-
-	push!(subjects, sub)
+	subjects
 end
 
 """Merge bounding boxes
@@ -101,6 +99,18 @@ function delete_multi_labels(subject, groups)
 	to_delete
 end
 
+
+"""Delete bounding boxes that are unlabeled singletons.
+
+Some people drew bounding boxes around inappropriate objects or even on blank
+areas on the herbarium sheet. This is an attempt to fix this problem. I'm
+using two simple heuristics to find and remove these problems.
+1) We're assuming that the boxes were not in groups. That is they are single
+   boxes on their own.
+2) We're also assuming that people didn't label these boxes. This one isn't
+   always true but we're accepting some false positives rather than throw out
+   too many properly labeled singletons.
+"""
 function delete_unlabeled(subject, groups)
 	to_delete = zeros(Bool, length(groups))
 	for g in 1:findmax(groups)[1]
@@ -114,32 +124,58 @@ function delete_unlabeled(subject, groups)
 	to_delete
 end
 
-for subject in subjects
-	boxes = boxes2array(subject.boxes)
-	groups = bbox_nms_groups(boxes)
-	for (box, group) in zip(subject.boxes, groups)
-		box.group = group
-	end
 
-	if length(groups) == 0
-		continue
+"""Create a merged box from a group of bounding boxes."""
+function merge_boxes(subject)
+	if length(subject.boxes) == 0
+		return
 	end
-
-	to_delete = delete_multi_labels(subject, groups)
-	to_delete .|= delete_unlabeled(subject, groups)
-	deleteat!(subject.boxes, to_delete)
 
 	boxes = boxes2array(subject.boxes)
 	groups = overlapping_bboxes(boxes)
 	for g in 1:findmax(groups)[1]
-		boxes = boxes2array(subject.boxes[groups .== g])
+		targets = subject.boxes[groups .== g]
+		boxes = boxes2array(targets)
 		min_x = minimum(boxes[:, 1])
 		min_y = minimum(boxes[:, 2])
 		max_x = maximum(boxes[:, 3])
 		max_y = maximum(boxes[:, 4])
-		types = [b.type_ for b in subject.boxes]
-		type_ = join(types, "_")
-		box = MergedBox(type_, [min_x, min_y, max_x, max_y])
+		types = unique([b.type_ for b in targets])
+		types = join(sort(types), "_")
+		box = MergedBox(types, [min_x, min_y, max_x, max_y])
 		push!(subject.merged, box)
 	end
 end
+
+"""Remove bad data from the subject."""
+function filter_boxes(subject, groups)
+	to_delete = delete_multi_labels(subject, groups)
+	to_delete .|= delete_unlabeled(subject, groups)
+	subject.deleted = subject.boxes[to_delete]
+	deleteat!(subject.boxes, to_delete)
+end
+
+
+function main()
+
+	unreconciled = CSV.File(UNRECONCILED) |> DataFrame  # Read unreconciled data
+
+	by_subject = groupby(unreconciled, :subject_id)  # Group classifications by subject
+
+	subjects = init_subject_records(by_subject)
+
+	for subject in subjects
+		boxes = boxes2array(subject.boxes)
+		groups = bbox_nms_groups(boxes)
+
+		if length(groups) == 0
+			continue
+		end
+
+		filter_boxes(subject, groups)
+		merge_boxes(subject)
+	end
+
+end
+
+main()
