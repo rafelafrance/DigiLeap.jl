@@ -21,7 +21,7 @@ keepers with a positive group number and all of the ones normally removed by NMS
 negative values. For instance group 3's winner is labeled with a 3 and losers are
 marked -3.
 
-We use this function for variants of bounding box non-maximum suppression.
+We use this function for other variants of bounding box non-maximum suppression.
 
 Modified from Matlab code:
 https://www.computervisionblog.com/2011/08/blazing-fast-nmsm-from-exemplar-svm.html
