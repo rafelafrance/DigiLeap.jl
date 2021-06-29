@@ -26,6 +26,9 @@ begin
 	using PlutoUI
 end
 
+# ╔═╡ 39280d20-cf59-4819-b656-00de8de6ca5a
+md"""# Display Reconciled Bounding Boxes"""
+
 # ╔═╡ 39b004ba-295b-4e56-8023-de2a1d36b5ea
 md"""# Setup"""
 
@@ -36,12 +39,8 @@ md"""## File locations"""
 begin
 	LABEL_BABEL_2 = "data/label-babel-2"
 	SHEETS_2 = "$LABEL_BABEL_2/herbarium-sheets-small"
-	UNRECONCILED = "$LABEL_BABEL_2/17633_label_babel_2.unreconciled.csv"
-	RECONCILED = "$LABEL_BABEL_2/17633_label_babel_2.reconciled.csv"
+	RECONCILED = "junk/17633_label_babel_2.reconciled.csv"
 end
-
-# ╔═╡ 39280d20-cf59-4819-b656-00de8de6ca5a
-md"""# Display Reconciled Bounding Boxes"""
 
 # ╔═╡ 62f76c0a-236b-4aa9-ab27-e0ae67108de1
 md"""## Read reconciled data"""

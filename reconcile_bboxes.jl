@@ -15,15 +15,14 @@ struct BBox
     BBox(lb, box) = new(box, lb)
 end
 
+
 """Convert a bounding box to JSON."""
-function bbox_to_json(bbox::BBox)
-    JSON.json(Dict(
-        :left => bbox.box[1],
-        :top => bbox.box[2],
-        :right => bbox.box[3],
-        :bottom => bbox.box[4],
-    ))
-end
+bbox_to_json(bbox::BBox) = JSON.json(Dict(
+    :left => bbox.box[1],
+    :top => bbox.box[2],
+    :right => bbox.box[3],
+    :bottom => bbox.box[4],
+))
 
 
 """A temporary struct to organize all of the bounding boxes on a herbarium sheet."""
@@ -185,7 +184,7 @@ function write_reconciled_csv(subjects, out_csv)
     end
 
     # Setup a data frame
-    columns = OrderedDict("subject_id" => Int64[], "file_name" => String[])
+    columns = OrderedDict("subject_id" => Int64[], "image_file" => String[])
     for i in 1:merged_count
         columns["merged_box_$i"] = String[]
         columns["merged_type_$i"] = String[]
@@ -202,7 +201,7 @@ function write_reconciled_csv(subjects, out_csv)
 
     # Fill the data frame
     for sub in subjects
-        row = OrderedDict("subject_id" => sub.subject_id, "file_name" => sub.file_name)
+        row = OrderedDict("subject_id" => sub.subject_id, "image_file" => sub.file_name)
         for i in 1:merged_count
             key = "merged_box_$i"
             row[key] = i <= length(sub.merged) ? bbox_to_json(sub.merged[i]) : ""
