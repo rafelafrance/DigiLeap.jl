@@ -21,13 +21,13 @@ keepers with a positive group number and all of the ones normally removed by NMS
 negative values. For instance group 3's winner is labeled with a 3 and losers are
 marked -3.
 
-We use this function for other variants of bounding box non-maximum suppression.
+We use this function for variants of bounding box non-maximum suppression.
 
 Modified from Matlab code:
 https://www.computervisionblog.com/2011/08/blazing-fast-nmsm-from-exemplar-svm.html
 """
 function bbox_nms_groups(boxes; threshold=0.3)
-	foxes = convert(Matrix{Float32}, boxes)
+	foxes = convert(Matrix{Float64}, boxes)
 
 	# Simplify access to box components
 	x_min, y_min, x_max, y_max = foxes[:, 1], foxes[:, 2], foxes[:, 3], foxes[:, 4]
@@ -35,7 +35,7 @@ function bbox_nms_groups(boxes; threshold=0.3)
 	area = (x_max .- x_min .+ 1.0) .* (y_max .- y_min .+ 1.0)
 	idx = sortperm(area)
 
-	overlapping = zeros(Int32, length(idx))
+	overlapping = zeros(Int, length(idx))
 	group = 0
 
 	while length(idx) > 0
