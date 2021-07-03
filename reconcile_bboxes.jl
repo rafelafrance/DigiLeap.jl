@@ -25,7 +25,7 @@ mutable struct MergedSubject
 
     MergedSubject(subject_id, image_file, image_size) = new(
         subject_id, image_file, image_size,
-        empty_pixel_coords(), empty_pixel_coords(), empty_pixel_coords(),
+        pixel_coords(), pixel_coords(), pixel_coords(),
         Array{String}[], Array{String}[], Array{String}[])
 end
 
@@ -50,7 +50,7 @@ function init_subject_records(by_subject, image_dir)
 
         image_size = size(image)
         sub = MergedSubject(subject_id, image_file, image_size)
-        boxes = empty_pixel_coords()
+        boxes = pixel_coords()
 
         for row in eachrow(old_sub)
 
@@ -78,9 +78,10 @@ end
 function delete_bad_boxes(subject, groups)
     to_delete = delete_multi_labels(subject, groups)
     to_delete .|= delete_unlabeled(subject, groups)
+
     subject.deleted = subject.boxes[to_delete, :]
     subject.deleted_types = subject.box_types[to_delete]
-    subject.boxes = PixelCoords(subject.boxes[.!to_delete, :])
+    subject.boxes = subject.boxes[.!to_delete, :]
     subject.box_types = subject.box_types[.!to_delete]
 end
 
@@ -138,7 +139,7 @@ function reconcile_boxes(subject)
         return
     end
 
-    merged = empty_pixel_coords()
+    subject.merged = pixel_coords()
     groups = overlapping_bboxes(subject.boxes)
     for g in 1:findmax(groups)[1]
         boxes = subject.boxes[groups .== g, :]
@@ -147,14 +148,13 @@ function reconcile_boxes(subject)
         max_x = maximum(boxes[:, 3])
         max_y = maximum(boxes[:, 4])
         box = [min_x min_y max_x max_y]
-        merged = vcat(merged, box)
+        subject.merged = vcat(subject.merged, box)
 
         types = subject.box_types[groups .== g]
         types = unique(t for t in types if t != "")
         types = join(sort(types), "_")
         push!(subject.merged_types, types)
     end
-    subject.merged = PixelCoords(merged)
 end
 
 

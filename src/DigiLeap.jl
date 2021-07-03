@@ -6,7 +6,7 @@ using JSON
 
 export iou, bbox_nms, bbox_nms_groups, overlapping_bboxes,
        PixelCoords, NormedCoords, CenterNormed,
-       clamp_pixels, empty_pixel_coords, json2coords, bbox2json,
+       json2coords, bbox2json, pixel_coords, clamp_pixels!, orient_pixels,
        simple_box
 
 
