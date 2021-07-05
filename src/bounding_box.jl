@@ -48,6 +48,17 @@ function orient_pixels(coords::Matrix{Int})::Matrix{Int}
 end
 
 
+"""Merge a group of boxes into a single "best" box."""
+function merge_boxes(boxes::Matrix{Int})::Matrix{Int}
+    min_x = minimum(boxes[:, 1])
+    min_y = minimum(boxes[:, 2])
+    max_x = maximum(boxes[:, 3])
+    max_y = maximum(boxes[:, 4])
+    box = convert(Matrix{Int}, [min_x min_y max_x max_y])
+    box
+end
+
+
 ######################################################################################
 # """Pixel coordinates of bounding boxes.
 

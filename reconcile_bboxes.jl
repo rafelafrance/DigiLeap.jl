@@ -11,8 +11,8 @@ using Logging
 using ProgressBars
 
 
-"""A temporary struct to organize all of the bounding boxes on a herbarium sheet."""
-mutable struct MergedSubject
+"""A temporary struct to organize bounding boxes on herbarium sheets."""
+mutable struct Subject
     subject_id::Int64
     image_file::String
     image_size::Tuple{Int64, Int64}
@@ -23,15 +23,56 @@ mutable struct MergedSubject
     deleted_types::Vector{String}
     merged_types::Vector{String}
 
-    MergedSubject(subject_id, image_file, image_size) = new(
+    Subject(subject_id, image_file, image_size) = new(
         subject_id, image_file, image_size,
         pixel_coords(), pixel_coords(), pixel_coords(),
         Array{String}[], Array{String}[], Array{String}[])
 end
 
 
-"""Convert the CSV/JSON input data into an array of MergedSubject records."""
-function init_subject_records(by_subject, image_dir)
+function main()
+    args = parse_arguments()
+
+    unreconciled = CSV.File(args["unreconciled"]) |> DataFrame
+    if !isnothing(args["limit"])
+        unreconciled = first(unreconciled, args["limit"])
+    end
+
+    by_subject = groupby(unreconciled, :subject_id)
+    subjects = init_subjects(by_subject, args["images"])
+    reconcile_subjects(subjects)
+    write_reconciled_csv(subjects, args["reconciled"])
+end
+
+
+"""Process command line arguments."""
+function parse_arguments()
+    settings = ArgParseSettings()
+
+    @add_arg_table! settings begin
+        "--unreconciled", "-u"
+            help = """Path to the unreconciled input CSV."""
+            required = true
+            arg_type = String
+        "--reconciled", "-r"
+            help = """Path to the reconciled output CSV."""
+            required = true
+            arg_type = String
+        "--images", "-i"
+            help = """Path to the directory containing the images."""
+            required = true
+            arg_type = String
+        "--limit", "-l"
+            help = """Limit the unreconciled input to the first N records."""
+            arg_type = Int
+    end
+
+    parse_args(settings)
+end
+
+
+"""Convert the CSV/JSON input data into an array of Subject records."""
+function init_subjects(by_subject, image_dir)
     subjects = []
 
     prefix = "Box(es): box"
@@ -49,7 +90,7 @@ function init_subject_records(by_subject, image_dir)
         end
 
         image_size = size(image)
-        sub = MergedSubject(subject_id, image_file, image_size)
+        sub = Subject(subject_id, image_file, image_size)
         boxes = pixel_coords()
 
         for row in eachrow(old_sub)
@@ -71,6 +112,21 @@ function init_subject_records(by_subject, image_dir)
         push!(subjects, sub)
     end
     subjects
+end
+
+
+"""Reconcile subject bounding boxes."""
+function reconcile_subjects(subjects)
+    for subject in ProgressBar(subjects)
+        groups = bbox_nms_groups(subject.boxes)
+
+        if length(groups) == 0
+            continue
+        end
+
+        delete_bad_boxes(subject, groups)
+        reconcile_boxes(subject)
+    end
 end
 
 
@@ -143,11 +199,7 @@ function reconcile_boxes(subject)
     groups = overlapping_bboxes(subject.boxes)
     for g in 1:findmax(groups)[1]
         boxes = subject.boxes[groups .== g, :]
-        min_x = minimum(boxes[:, 1])
-        min_y = minimum(boxes[:, 2])
-        max_x = maximum(boxes[:, 3])
-        max_y = maximum(boxes[:, 4])
-        box = [min_x min_y max_x max_y]
+        box = merge_boxes(boxes)
         subject.merged = vcat(subject.merged, box)
 
         types = subject.box_types[groups .== g]
@@ -198,18 +250,14 @@ function write_reconciled_csv(subjects, out_csv)
 
         count = size(s.merged, 1)
         for i in 1:merge_len
-            key1 = "merged_box_$i"
-            key2 = "merged_type_$i"
-            row[key1] = i <= count ? bbox2json(s.merged[i, :]) : ""
-            row[key2] = i <= count ? s.merged_types[i] : ""
+            row["merged_box_$i"] = i <= count ? bbox2json(s.merged[i, :]) : ""
+            row["merged_type_$i"] = i <= count ? s.merged_types[i] : ""
         end
 
         count = size(s.deleted, 1)
         for i in 1:del_len
-            key1 = "removed_box_$i"
-            key2 = "removed_type_$i"
-            row[key1] = i <= count ? bbox2json(s.deleted[i, :]) : ""
-            row[key2] = i <= count ? s.deleted_types[i] : ""
+            row["removed_box_$i"] = i <= count ? bbox2json(s.deleted[i, :]) : ""
+            row["removed_type_$i"] = i <= count ? s.deleted_types[i] : ""
         end
 
         count = size(s.boxes, 1)
@@ -222,55 +270,6 @@ function write_reconciled_csv(subjects, out_csv)
     end
 
    CSV.write(out_csv, df)
-end
-
-
-"""Process command line arguments."""
-function parse_arguments()
-    settings = ArgParseSettings()
-
-    @add_arg_table! settings begin
-        "--unreconciled", "-u"
-            help = """Path to the unreconciled input CSV."""
-            required = true
-            arg_type = String
-        "--reconciled", "-r"
-            help = """Path to the reconciled output CSV."""
-            required = true
-            arg_type = String
-        "--images", "-i"
-            help = """Path to the directory containing the images."""
-            required = true
-            arg_type = String
-    end
-
-    parse_args(settings)
-end
-
-
-"""Process the script."""
-function main()
-    args = parse_arguments()
-
-    unreconciled = CSV.File(args["unreconciled"]) |> DataFrame
-    # unreconciled = first(unreconciled, 100)
-
-    by_subject = groupby(unreconciled, :subject_id)
-
-    subjects = init_subject_records(by_subject, args["images"])
-
-    for subject in ProgressBar(subjects)
-        groups = bbox_nms_groups(subject.boxes)
-
-        if length(groups) == 0
-            continue
-        end
-
-        delete_bad_boxes(subject, groups)
-        reconcile_boxes(subject)
-    end
-
-    write_reconciled_csv(subjects, args["reconciled"])
 end
 
 
