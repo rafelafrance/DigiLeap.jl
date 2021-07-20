@@ -23,6 +23,7 @@ begin
 	using DigiLeap
 	using Images
 	using JSON
+	using Luxor
 	using PlutoUI
 end
 
@@ -51,11 +52,13 @@ df = CSV.File(RECONCILED) |> DataFrame
 # ╔═╡ e8ef035a-4e4d-4a22-9a09-b78d2e127abf
 md"""## Display bounding box given JSON coordinates"""
 
-# ╔═╡ 70cacb63-709a-42ee-bc84-b14266510adc
-function draw_box(image, box, color; thickness=1)
-	box = JSON.parse(box)
-	ll, tt, rr, bb = box["left"], box["top"], box["right"], box["bottom"]
-	simple_box(image, (ll, tt, rr, bb), color=color, thickness=thickness)
+# ╔═╡ b309306e-b3f0-43b4-b1b9-b40498b72879
+function json_box(image, bx, color; thickness=1)
+	bx = JSON.parse(bx)
+	ll, tt, rr, bb = bx["left"], bx["top"], bx["right"], bx["bottom"]
+	sethue(color)
+	setline(thickness)
+	box(Point(ll, tt), Point(rr, bb), :stroke)
 end
 
 # ╔═╡ 3c70dabb-a4c9-4a10-8832-01440d5ada83
@@ -67,34 +70,44 @@ function show_boxes(idx)
 	row = Dict(pairs(skipmissing(row)))
 
 	path = "$SHEETS_2/$(row[:image_file])"
+	im_size = 800
 
 	image = load(path)
+	h, w = size(image)
 
-	for box in [v for (k, v) in pairs(row) if startswith(string(k), "merged_box_")]
-		draw_box(image, box, RGB(0.75, 0, 0); thickness=4)
+	im_scale = im_size / max(h, w)
+
+	Drawing(round(w * im_scale), round(h * im_scale))
+
+	scale(im_scale, im_scale)
+	placeimage(image)
+
+	for b in [v for (k, v) in pairs(row) if startswith(string(k), "merged_box_")]
+		json_box(image, b, RGB(0.75, 0, 0))
 	end
 
-	for box in [v for (k, v) in pairs(row) if startswith(string(k), "box_")]
-		draw_box(image, box, RGB(0.25, 0.25, 0.75))
+	for b in [v for (k, v) in pairs(row) if startswith(string(k), "box_")]
+		json_box(image, b, RGB(0.25, 0.25, 0.75))
 	end
 
-	for box in [v for (k, v) in pairs(row) if startswith(string(k), "removed_box_")]
-		draw_box(image, box, RGB(0, 0.75, 0); thickness=4)
+	for b in [v for (k, v) in pairs(row) if startswith(string(k), "removed_box_")]
+		json_box(image, b, RGB(0, 0.75, 0))
 	end
 
-	image
+	# finish()
+	preview()
 end
+
+# ╔═╡ d63abc39-7628-4429-a191-422ed3605e08
+@bind idx Slider(1:size(df, 1); show_value=true)
 
 # ╔═╡ 7b9ee6de-f3a4-42ba-ab6b-7efc2e2e6236
 md"""## Choose a subject"""
 
-# ╔═╡ db853124-c950-4951-a9d3-19f208fac09a
-@bind idx Slider(1:size(df, 1); show_value=true)
-
 # ╔═╡ 04d5ee1f-dd31-4f9c-967b-b0535d76392d
 show_boxes(idx)
 
-# ╔═╡ 50f35ce4-4d2c-47e1-9c6f-7079993e00a6
+# ╔═╡ ff2ce5ae-b9d8-4395-ac04-bb3ced50cfb8
 
 
 # ╔═╡ Cell order:
@@ -107,10 +120,10 @@ show_boxes(idx)
 # ╟─62f76c0a-236b-4aa9-ab27-e0ae67108de1
 # ╠═c52ab234-83fc-48d5-a3a8-3b8f23031b55
 # ╟─e8ef035a-4e4d-4a22-9a09-b78d2e127abf
-# ╠═70cacb63-709a-42ee-bc84-b14266510adc
+# ╠═b309306e-b3f0-43b4-b1b9-b40498b72879
 # ╟─3c70dabb-a4c9-4a10-8832-01440d5ada83
 # ╠═29d7ff04-4cc2-474d-9c81-8d4462812d5a
+# ╠═d63abc39-7628-4429-a191-422ed3605e08
 # ╟─7b9ee6de-f3a4-42ba-ab6b-7efc2e2e6236
-# ╟─db853124-c950-4951-a9d3-19f208fac09a
 # ╠═04d5ee1f-dd31-4f9c-967b-b0535d76392d
-# ╠═50f35ce4-4d2c-47e1-9c6f-7079993e00a6
+# ╠═ff2ce5ae-b9d8-4395-ac04-bb3ced50cfb8

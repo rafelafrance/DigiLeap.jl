@@ -16,10 +16,10 @@ end
 
 """Find non-maximum suppression groups of bounding boxes.
 
-This finds and labels all boxes in each non-maximum suppression group and marks the
-keepers with a positive group number and all of the ones normally removed by NMS with
-negative values. For instance group 3's winner is labeled with a 3 and losers are
-marked -3.
+This finds and labels all boxes in each non-maximum suppression group
+and marks the keepers with a positive group number and all of the ones
+normally removed by NMS with negative values. For instance group 3's winner
+is labeled with a 3 and losers are marked -3.
 
 We use this function for variants of bounding box non-maximum suppression.
 

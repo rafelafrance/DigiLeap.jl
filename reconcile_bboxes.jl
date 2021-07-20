@@ -30,7 +30,8 @@ mutable struct Subject
 end
 
 
-function main()
+"""The main function."""
+function reconcile()
     args = parse_arguments()
 
     unreconciled = CSV.File(args["unreconciled"]) |> DataFrame
@@ -42,32 +43,6 @@ function main()
     subjects = init_subjects(by_subject, args["images"])
     reconcile_subjects(subjects)
     write_reconciled_csv(subjects, args["reconciled"])
-end
-
-
-"""Process command line arguments."""
-function parse_arguments()
-    settings = ArgParseSettings()
-
-    @add_arg_table! settings begin
-        "--unreconciled", "-u"
-            help = """Path to the unreconciled input CSV."""
-            required = true
-            arg_type = String
-        "--reconciled", "-r"
-            help = """Path to the reconciled output CSV."""
-            required = true
-            arg_type = String
-        "--images", "-i"
-            help = """Path to the directory containing the images."""
-            required = true
-            arg_type = String
-        "--limit", "-l"
-            help = """Limit the unreconciled input to the first N records."""
-            arg_type = Int
-    end
-
-    parse_args(settings)
 end
 
 
@@ -273,4 +248,30 @@ function write_reconciled_csv(subjects, out_csv)
 end
 
 
-main()
+"""Process command line arguments."""
+function parse_arguments()
+    settings = ArgParseSettings()
+
+    @add_arg_table! settings begin
+        "--unreconciled", "-u"
+            help = """Path to the unreconciled input CSV."""
+            required = true
+            arg_type = String
+        "--reconciled", "-r"
+            help = """Path to the reconciled output CSV."""
+            required = true
+            arg_type = String
+        "--images", "-i"
+            help = """Path to the directory containing the images."""
+            required = true
+            arg_type = String
+        "--limit", "-l"
+            help = """Limit the unreconciled input to the first N records."""
+            arg_type = Int
+    end
+
+    parse_args(settings)
+end
+
+
+reconcile()
