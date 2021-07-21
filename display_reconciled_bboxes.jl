@@ -94,7 +94,7 @@ function show_boxes(idx)
 		json_box(image, b, RGB(0, 0.75, 0))
 	end
 
-	# finish()
+	finish()
 	preview()
 end
 

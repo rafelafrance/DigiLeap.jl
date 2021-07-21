@@ -265,7 +265,7 @@ function parse_arguments()
             help = """Path to the directory containing the images."""
             required = true
             arg_type = String
-        "--limit", "-l"
+        "--limit", "-L"
             help = """Limit the unreconciled input to the first N records."""
             arg_type = Int
     end

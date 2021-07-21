@@ -59,7 +59,7 @@ function merge_boxes(boxes::Matrix{Int})::Matrix{Int}
 end
 
 
-######################################################################################
+# ######################################################################################
 # """Pixel coordinates of bounding boxes.
 
 # In [left top right bottom] = [min_x min_y max_x max_y] order.
