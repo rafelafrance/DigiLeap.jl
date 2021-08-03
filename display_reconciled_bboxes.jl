@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.14.7
+# v0.15.1
 
 using Markdown
 using InteractiveUtils
@@ -13,18 +13,20 @@ macro bind(def, element)
     end
 end
 
-# ╔═╡ 5cbedf9e-3bfb-4862-b7b0-4f53715bbbc7
-using Revise
-
 # ╔═╡ bf2b8bf6-c281-11eb-1830-57b105bc4b13
 begin
+	using Pkg
+	Pkg.activate(".")
+
+	using Revise
 	using CSV
 	using DataFrames
-	using DigiLeap
 	using Images
+	using ImageDraw
 	using JSON
-	using Luxor
 	using PlutoUI
+
+	using DigiLeap
 end
 
 # ╔═╡ 39280d20-cf59-4819-b656-00de8de6ca5a
@@ -53,12 +55,15 @@ df = CSV.File(RECONCILED) |> DataFrame
 md"""## Display bounding box given JSON coordinates"""
 
 # ╔═╡ b309306e-b3f0-43b4-b1b9-b40498b72879
-function json_box(image, bx, color; thickness=1)
-	bx = JSON.parse(bx)
+function json_box(image, box, color; thickness=1)
+	bx = JSON.parse(box)
 	ll, tt, rr, bb = bx["left"], bx["top"], bx["right"], bx["bottom"]
-	sethue(color)
-	setline(thickness)
-	box(Point(ll, tt), Point(rr, bb), :stroke)
+
+	h, w = size(image)
+	
+	for i in 1:thickness
+		draw!(image, Polygon(RectanglePoints(Point(ll, tt), Point(rr, bb))), color)
+	end
 end
 
 # ╔═╡ 3c70dabb-a4c9-4a10-8832-01440d5ada83
@@ -70,32 +75,22 @@ function show_boxes(idx)
 	row = Dict(pairs(skipmissing(row)))
 
 	path = "$SHEETS_2/$(row[:image_file])"
-	im_size = 800
 
 	image = load(path)
-	h, w = size(image)
-
-	im_scale = im_size / max(h, w)
-
-	Drawing(round(w * im_scale), round(h * im_scale))
-
-	scale(im_scale, im_scale)
-	placeimage(image)
 
 	for b in [v for (k, v) in pairs(row) if startswith(string(k), "merged_box_")]
-		json_box(image, b, RGB(0.75, 0, 0))
-	end
-
-	for b in [v for (k, v) in pairs(row) if startswith(string(k), "box_")]
-		json_box(image, b, RGB(0.25, 0.25, 0.75))
+		json_box(image, b, RGB{N0f8}(0.75, 0, 0), thickness=4)
 	end
 
 	for b in [v for (k, v) in pairs(row) if startswith(string(k), "removed_box_")]
-		json_box(image, b, RGB(0, 0.75, 0))
+		json_box(image, b, RGB{N0f8}(0, 0.75, 0), thickness=4)
 	end
 
-	finish()
-	preview()
+	for b in [v for (k, v) in pairs(row) if startswith(string(k), "box_")]
+		json_box(image, b, RGB{N0f8}(0.25, 0.25, 0.75))
+	end
+
+	image
 end
 
 # ╔═╡ d63abc39-7628-4429-a191-422ed3605e08
@@ -113,7 +108,6 @@ show_boxes(idx)
 # ╔═╡ Cell order:
 # ╟─39280d20-cf59-4819-b656-00de8de6ca5a
 # ╟─39b004ba-295b-4e56-8023-de2a1d36b5ea
-# ╠═5cbedf9e-3bfb-4862-b7b0-4f53715bbbc7
 # ╠═bf2b8bf6-c281-11eb-1830-57b105bc4b13
 # ╟─46e1eb9d-19fc-4176-86fe-f57a4e37579d
 # ╠═be57fa62-073c-4d68-ba7a-f030409b1fab
