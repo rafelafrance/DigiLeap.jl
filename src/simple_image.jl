@@ -12,3 +12,19 @@ function simple_box(image, coords; color=RGB(0, 0, 0), thickness=1)
 	image[tt:bb, ll:clamp(ll+thickness, 1, max_w)] .= color
 	image[tt:bb, clamp(rr-thickness, 1, max_w):rr] .= color
 end
+
+
+function imagesize(filename)
+    wand = ImageMagick.MagickWand()
+    success = ccall(
+        (:MagickPingImage, ImageMagick.libwand),
+        Bool,
+        (Ptr{Cvoid}, Ptr{UInt8}),
+        wand,
+        filename
+    )
+    if !success
+        throw(ParseError())
+    end
+    reverse(size(wand))
+end

@@ -5,7 +5,6 @@ using Images
 using JSON
 using Logging
 using ProgressBars
-# using PyCall
 
 
 """A temporary struct to organize bounding boxes on herbarium sheets."""
@@ -43,8 +42,6 @@ end
 
 """Convert the CSV/JSON input data into an array of Subject records."""
 function init_subjects(by_subject, image_dir)::Vector{Subject}
-    # PILImage = pyimport("PIL.Image")
-
     subjects::Vector{Subject} = []
 
     prefix = "Box(es): box"
@@ -54,17 +51,12 @@ function init_subjects(by_subject, image_dir)::Vector{Subject}
         subject_id = old_sub.subject_id[1]
         image_file = old_sub.subject_Filename[1]
 
-        image = try
-            load("$image_dir/$image_file")
-            # PILImage.open("$image_dir/$image_file")
+        image_size = try
+            imagesize("$image_dir/$image_file")
         catch
             @warn "Could not load: $image_file"
             continue
         end
-
-        # image_size = reverse(image.size)
-        # image.close()
-        image_size = size(image)
 
         subject = Subject(subject_id, image_file, image_size)
         boxes = pixel_coords()
