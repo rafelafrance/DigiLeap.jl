@@ -26,17 +26,18 @@ mutable struct Subject
 end
 
 
-"""The main function."""
-function reconcile(args)
-    unreconciled = CSV.File(args["unreconciled"]) |> DataFrame
-    if !isnothing(args["limit"])
-        unreconciled = first(unreconciled, args["limit"])
+"""Reconcile all input from a "Label Babel" expedition."""
+function reconcile(unreconciled_csv, reconciled_jsonl, image_dir; limit=nothing)
+    unreconciled = CSV.File(unreconciled_csv) |> DataFrame
+    if !isnothing(limit)
+        unreconciled = first(unreconciled, limit)
     end
 
     by_subject = groupby(unreconciled, :subject_id)
-    subjects = init_subjects(by_subject, args["images"])
+    subjects = init_subjects(by_subject, image_dir)
     reconcile_subjects(subjects)
-    write_reconciled(subjects, args["reconciled"])
+    delete_degenerate_merges(subjects)
+    write_reconciled(subjects, reconciled_jsonl)
 end
 
 
@@ -174,6 +175,17 @@ function reconcile_boxes(subject)
         types = unique(t for t in types if t != "")
         types = join(sort(types), "_")
         push!(subject.merged_types, types)
+    end
+end
+
+"""Remove merged bounding boxes that are too small in height or width."""
+function delete_degenerate_merges(subjects; threshold=12)
+    for s in ProgressBar(subjects)
+        keep1 = s.merged[:, 4] .- s.merged[:, 2] .>= threshold
+        keep2 = s.merged[:, 3] .- s.merged[:, 1] .>= threshold
+        keep = keep1 .& keep2
+        s.merged = s.merged[keep, :]
+        s.merged_types = s.merged_types[keep]
     end
 end
 

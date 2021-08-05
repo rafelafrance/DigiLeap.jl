@@ -19,7 +19,6 @@ begin
 	Pkg.activate(".")
 
 	using Revise
-	using CSV
 	using DataFrames
 	using Images
 	using ImageDraw
@@ -42,7 +41,7 @@ md"""## File locations"""
 begin
 	LABEL_BABEL_2 = "data/label-babel-2"
 	SHEETS_2 = "$LABEL_BABEL_2/herbarium-sheets-small"
-	RECONCILED = "junk/17633_label_babel_2.reconciled.csv"
+	RECONCILED = "output/17633_label_babel_2.reconciled.jsonl"
 end
 
 # ╔═╡ 62f76c0a-236b-4aa9-ab27-e0ae67108de1
@@ -60,7 +59,7 @@ function json_box(image, box, color; thickness=1)
 	ll, tt, rr, bb = bx["left"], bx["top"], bx["right"], bx["bottom"]
 
 	h, w = size(image)
-	
+
 	for i in 1:thickness
 		draw!(image, Polygon(RectanglePoints(Point(ll, tt), Point(rr, bb))), color)
 	end

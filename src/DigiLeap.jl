@@ -1,10 +1,8 @@
 module DigiLeap
 
-
+using ImageMagick
 using JSON
 using Logging
-using ImageMagick
-
 
 export iou, bbox_nms, bbox_nms_groups, overlapping_bboxes,
     PixelCoords, NormedCoords, CenterNormed,
@@ -12,7 +10,6 @@ export iou, bbox_nms, bbox_nms_groups, overlapping_bboxes,
     reconcile,
     simple_box, imagesize
     # scale_label, orient_label
-
 
 include("box_calc.jl")
 include("bounding_box.jl")
